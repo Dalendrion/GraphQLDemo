@@ -1,7 +1,27 @@
 # GraphQLDemo
 Demo for GraphQL in Spring as seen in https://youtu.be/atA2OovQBic.
 
-This is the version from the end of the video
+This version is an extension of the previous.
+It solves the N+1 problem.
+
+When you get all authors and their books, it sends one query to fetch the authors (1).
+And for each author it sends a query to retrieve the books for that one author (N).
+
+To solve this, `AuthorController` gets an additional method:
+```java
+    @BatchMapping
+    Map<Author, List<Book>> books(List<Author> authors) {
+        Iterable<Book> books = bookRepository.findAll();
+        return authors.stream()
+                .collect(
+                        Collectors.toMap(
+                                Function.identity(),
+                                author ->
+                                        StreamSupport.stream(books.spliterator(), false)
+                                                .filter(b -> author.equals(b.getAuthor()))
+                                                .toList()));
+    }
+```
 
 After starting the app, open http://localhost:8080/graphql
 
